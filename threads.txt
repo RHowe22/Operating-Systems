@@ -46,22 +46,32 @@ Robert Howe	<rjhowe@buffalo.edu>
 
 >> A2: Briefly describe what happens in a call to timer_sleep(),
 >> including the effects of the timer interrupt handler.
+    After calling timer_sleep, the thread will be handled by sema_down, which will prevent race conditions from cuncurrent threads trying to access timer_sleep.
+        Then, it sets the sleeping_list_modified flag to prevent the interrupt from modifying the list while timer_sleep is accessing it.
+            Then, we will set the current thread's wake up time to be the value of timer_ticks + ticks passed in as an argument in timer_sleep.
+                Now, we will block the current thread and add it to the sleeping list in an ordered manner.
+                    After this, we can call sema_up and reset sleeping_list_modified to its default state.
+
 
 >> A3: What steps are taken to minimize the amount of time spent in
 >> the timer interrupt handler?
+    The sleeping thread list will be ordered by wake up time, where head points to the earliest wake up time thread(FIFO variation), minimizing total time spent.
 
 ---- SYNCHRONIZATION ----
 
 >> A4: How are race conditions avoided when multiple threads call
 >> timer_sleep() simultaneously?
+    By using sema_down on thread_in_sleep, we guarantee that only one thread at a time is accessing timer_sleep.
 
 >> A5: How are race conditions avoided when a timer interrupt occurs
 >> during a call to timer_sleep()?
+    By using the sleeping_list_modified bool, we prevent both the interrupt and timer_sleep from modifying the list at the same time.
 
 ---- RATIONALE ----
 
 >> A6: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
+    It's fairly simple and versatile. It has a simple functionality and won't affect other portions of the operating system, like other implementations risked doing.
 
 			 PRIORITY SCHEDULING
 			 ===================
