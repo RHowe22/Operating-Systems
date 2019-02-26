@@ -30,6 +30,18 @@ Robert Howe	<rjhowe@buffalo.edu>
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+
+       Added to Struct Thread:
+        int64_t wakeUpTime:                 // Time that a sleeping thread should wake up.
+
+       Added to file thread.c:
+        static struct sleeping_threads      // List that will hold sleeping threads.
+
+       Added to file timer.c:
+        bool sleeping_list_modified         // Bool that signals that timer_sleep is modifing the sleeping threads list
+        struct semaphore thread_in_sleep    // Semaphore that handles threads that want to sleep
+
+
 ---- ALGORITHMS ----
 
 >> A2: Briefly describe what happens in a call to timer_sleep(),
