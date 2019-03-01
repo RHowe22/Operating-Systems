@@ -91,6 +91,10 @@ Robert Howe	<rjhowe@buffalo.edu>
 >> B3: How do you ensure that the highest priority thread waiting for
 >> a lock, semaphore, or condition variable wakes up first?
 
+	We ensure as when ever an element is blocked using semadown, which is is used to implement
+ blocking threads in the other synch structures, it is added to its waiting list in order from the highest priority thread in the front and the lowest priority thread in the back. if there is a 
+tie between two threads priority. they are ordered by first in first out" 
+
 >> B4: Describe the sequence of events when a call to lock_acquire()
 >> causes a priority donation.  How is nested donation handled?
 
