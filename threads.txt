@@ -81,6 +81,10 @@ Robert Howe	<rjhowe@buffalo.edu>
 >> B1: Copy here the declaration of each new or changed `struct' or
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
+ 
+	in thread.c in struct thread
+	struct thread * donor  //is the thread that donated its priority
+	// to this  thread
 
 >> B2: Explain the data structure used to track priority donation.
 >> Use ASCII art to diagram a nested donation.  (Alternately, submit a
@@ -91,15 +95,29 @@ Robert Howe	<rjhowe@buffalo.edu>
 >> B3: How do you ensure that the highest priority thread waiting for
 >> a lock, semaphore, or condition variable wakes up first?
 
-	We ensure as when ever an element is blocked using semadown, which is is used to implement
- blocking threads in the other synch structures, it is added to its waiting list in order from the highest priority thread in the front and the lowest priority thread in the back. if there is a 
+	We ensure as when ever an element is blocked using semadown, which is is used to
+ implement blocking threads in the other synch structures, it is added to its waiting list in
+ order from the highest priority thread in the front and the lowest priority thread in the 
+ back. if there is a 
 tie between two threads priority. they are ordered by first in first out" 
 
 >> B4: Describe the sequence of events when a call to lock_acquire()
 >> causes a priority donation.  How is nested donation handled?
 
+when thread tries to acquire a lock and it see's that t the lock is aquired.
+it will check to see if its priority is greater than the lock holders. if it
+is it will donate its priority to the lockholder and block itself, otherwise it gets placed
+ on the waiting list in the lock.
+
+if the lock holder is given a priority by another thread it will set its donor to  point to this
+thread and calling get priorirty on this thread will return the value of the donors thread.
+if the donee had already been donated then add the previous donors to the waiters list in 
+in the lock.
+
 >> B5: Describe the sequence of events when lock_release() is called
 >> on a lock that a higher-priority thread is waiting for.
+
+
 
 ---- SYNCHRONIZATION ----
 
