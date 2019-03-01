@@ -176,6 +176,18 @@ design idea of using an actual list, since the dimensions are not limited while 
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+	in thread.c in struct thread
+	int nice	 // the value of how nice this thread is
+	fixed_point_t recent_cpu 	// this threads recent cpu time
+
+	global variables
+	stuct list [64] priority_queues // list of ready queue that store
+	// threads with priority x in priority_queues[x]
+	//threads in  higher indexes of priorty_queues will run first
+
+	fixed_point_t load_average // estimated average number 
+	// of threads ready to run in the last minute
+
 ---- ALGORITHMS ----
 
 >> C2: Suppose threads A, B, and C have nice values 0, 1, and 2.  Each
@@ -245,3 +257,4 @@ the quarter.
 >> students, either for future quarters or the remaining projects?
 
 >> Any other comments?
+
