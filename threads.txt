@@ -84,7 +84,7 @@ Robert Howe	<rjhowe@buffalo.edu>
  
 	in thread.c in struct thread
 	struct thread * donor  //is the thread that donated its priority
-	// to this  thread
+	                       // to this  thread
 
 >> B2: Explain the data structure used to track priority donation.
 >> Use ASCII art to diagram a nested donation.  (Alternately, submit a
@@ -139,6 +139,10 @@ in the lock.
 
 >> B7: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
+- This design allows for multiple nested priority donations. since we use pointers to indicate donation, it basically results in a
+    single linked list that describes the thread's donation relationships. It is superior to our previous design idea of using an actual list, since
+    the dimensions are not limited while using pointers.
+
 
 			  ADVANCED SCHEDULER
 			  ==================
