@@ -89,6 +89,14 @@ Robert Howe	<rjhowe@buffalo.edu>
 >> B2: Explain the data structure used to track priority donation.
 >> Use ASCII art to diagram a nested donation.  (Alternately, submit a
 >> .png file.)
+                    THREAD 1        THREAD 2          THREAD 3          THREAD 4
+                 +----------+     +-----------+     +-----------+     +----------+
+                 |PR    =42 |     |PR    =42  |     |PR    =42  |     |PR    =42 |
+                 |DONOR ={} |---->|DONOR =1   |---->|DONOR =2   |---->|DONOR =3  |----> ...
+                 +----------+     +-----------+     +-----------+     +----------+
+PR = Priority
+----> = donated priority
+
 
 ---- ALGORITHMS ----
 
