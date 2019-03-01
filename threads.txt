@@ -133,7 +133,7 @@ in the lock.
 >> how your implementation avoids it.  Can you use a lock to avoid
 >> this race?
 
-Let's say a thread is trying to update to a new priority. If at any point, there is an interrupt when the thread is trying to change its priority, a race condition will be created. 
+- Let's say a thread is trying to update to a new priority. If at any point, there is an interrupt when the thread is trying to change its priority, a race condition can be created.  We call thread_get_priority_of() on the threads so we can get the updated value of the threads at every instance.  
 
 ---- RATIONALE ----
 
