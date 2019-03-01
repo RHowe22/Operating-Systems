@@ -133,6 +133,8 @@ in the lock.
 >> how your implementation avoids it.  Can you use a lock to avoid
 >> this race?
 
+Let's say a thread is trying to update to a new priority. If at any point, there is an interrupt when the thread is trying to change its priority, a race condition will be created. 
+
 ---- RATIONALE ----
 
 >> B7: Why did you choose this design?  In what ways is it superior to
