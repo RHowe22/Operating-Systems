@@ -231,6 +231,14 @@ The current thread's priority updates every 4 ticks since it is the only thread 
 >> time to work on this part of the project, how might you choose to
 >> refine or improve your design?
 
+	the main critique behind our design is that it operates slowly
+as it can spend much time in the timer interput handler doing calculations
+and cheching conditions. if we had extra time look into making the size of
+a list a memeber to save time calculating the number of threads ready
+and connecting priority queues in the array in a way such that once the
+highest priority queue becomes empty it goes to the next populated queue without
+checking through all the empty queues in betweeen.
+
 >> C6: The assignment explains arithmetic for fixed-point math in
 >> detail, but it leaves it open to you to implement it.  Why did you
 >> decide to implement it the way you did?  If you created an
