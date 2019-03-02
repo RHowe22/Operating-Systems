@@ -245,10 +245,10 @@ checking through all the empty queues in betweeen.
 >> type and/or a set of functions or macros to manipulate fixed-point
 >> numbers, why did you do so?  If not, why not?
 
-in this assignment we used the fixed point implenetation that was provided
+In this assignment, we used the fixed point implementation that was provided
 for us to allow us to use to find solutions that required real numbers.
-that is why load_average and recent_cpu were both fixed because
-they had to  be represent as real numbers. and we only used these fixed
+That is why load_average and recent_cpu were both fixed because
+they had to  be represented as real numbers. We only used these fixed
 point values in functions that required us to use them as such.
 
 			   SURVEY QUESTIONS
