@@ -117,7 +117,7 @@ PR = Priority
 >> B3: How do you ensure that the highest priority thread waiting for
 >> a lock, semaphore, or condition variable wakes up first?
 
-We ensure as whenever an element is blocked using semadown(), which is used to
+We ensure that whenever an element is blocked using semadown(), which is used to
  implement blocking threads in the other synch structures, it is added to its waiting list in
  order from the highest priority thread in the front and the lowest priority thread in the 
  back. If there is a tie between two threads priority, they are ordered by First-In-First-Out method" 
@@ -138,7 +138,7 @@ in the lock.
 >> B5: Describe the sequence of events when lock_release() is called
 >> on a lock that a higher-priority thread is waiting for.
 
-When lock_release is called on a lock that a higher priority thread is waiting
+When lock_release is called on a lock that a higher priority thread is waiting for,
 the thread holding the lock removes the thread donor it has if it has any and places it
 back on the the waiting list in the lock and allows sema_up() to select the next highest
 priority thread in this lock's waiting list to hold the lock.
@@ -161,7 +161,7 @@ an interrupt when the thread is trying to change its priority, a race condition 
 >> another design you considered?
 
 - This design allows for multiple nested priority donations. since we 
-use pointers to indicate donation, it basically results in a single linked list
+use pointers to indicate donation, it basically results in a singly linked list
 that describes the thread's donation relationships. It is superior to our previous 
 design idea of using an actual list, since the dimensions are not limited while using pointers.
 
@@ -180,7 +180,7 @@ design idea of using an actual list, since the dimensions are not limited while 
 	fixed_point_t recent_cpu 	// this threads recent cpu time
 
 	global variables
-	stuct list [64] priority_queues // list of ready queue that store
+	struct list [64] priority_queues // list of ready queue that store
 	// threads with priority x in priority_queues[x]
 	//threads in  higher indexes of priorty_queues will run first
 
@@ -211,11 +211,12 @@ ticks   A   B   C   A   B   C   to run
 >> C3: Did any ambiguities in the scheduler specification make values
 >> in the table uncertain?  If so, what rule did you use to resolve
 >> them?  Does this match the behavior of your scheduler?
+
     Yes, for example at 16 ticks, when the priorities of A & B are tied at 60. There, we have the
     choice of letting A continue its execution until another process has a higher priority OR
     we can preempt A and let B run, considering that they have the same priority and threads that
     previously ran are added to a FCFS queue.
-        We used the preemption rule, as it is the way our scheduler is implemented.
+    We used the preemption rule, as it is the way our scheduler is implemented.
 
 
 >> C4: How is the way you divided the cost of scheduling between code
