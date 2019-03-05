@@ -139,4 +139,11 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
+/* puts current thread into the ordered list of sleeping threads*/
+void putToSleep(void);
+ 
+ /* returns a reference to the first element in the sleeping */
+void wakeUP (int64_t time);
+
+bool wakeUpComp (list_elem * ,list_elem *, void *)
 #endif /* threads/thread.h */

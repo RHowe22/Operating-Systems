@@ -196,11 +196,9 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
-  if(!sleeping_list_modified){
-    struct thread * woke = wakeUP(ticks);
-    if(woke!= NULL){
-    thread_unblock(woke);
-    }
+  if(!sleeping_list_modified)
+  {
+    wakeUP(ticks);
   }
   thread_tick ();
 }
@@ -264,7 +262,7 @@ real_time_sleep (int64_t num, int32_t denom)
          sub-tick timing. */
       real_time_delay (num, denom); 
     }
-    
+
 }
 
 /* Busy-wait for approximately NUM/DENOM seconds. */
