@@ -599,6 +599,9 @@ void wakeUP(int64_t ticks){
  bool wakeUpComp( struct list_elem * a, struct list_elem * b, int * useless ) {
    struct thread * aThread = list_entry(a, struct thread, elem);
    struct thread * bThread =list_entry(b, struct thread, elem);
+   if(aThread->wakeUpTime == bThread->wakeUpTime){
+     return aThread->priority <bThread->priority;
+   }
    return (aThread->wakeUpTime) < (bThread->wakeUpTime);
  }
 
