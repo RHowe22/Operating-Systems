@@ -145,5 +145,6 @@ void putToSleep(void);
  /* returns a reference to the first element in the sleeping */
 void wakeUP (int64_t time);
 
-bool wakeUpComp (list_elem * ,list_elem *, void *)
+bool wakeUpComp (list_elem * ,list_elem *, void *);
+void wakeUP(int64_t ticks);
 #endif /* threads/thread.h */

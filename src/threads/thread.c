@@ -584,6 +584,13 @@ allocate_tid (void)
 
   return tid;
 }
+void wakeUP(int64_t ticks){
+  //Setting woke to be first element of sleeping list
+  struct thread * woke = list_entry(list_begin(sleeping_threads),struct thread, elem);
+  if(woke!= NULL && woke->wakeUpTime <= ticks){
+    thread_unblock(woke);
+  }
+}
 
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
