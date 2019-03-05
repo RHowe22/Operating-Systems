@@ -584,14 +584,20 @@ allocate_tid (void)
 
   return tid;
 }
+
 void wakeUP(int64_t ticks){
   //Setting woke to be first element of sleeping list
-  struct thread * woke = list_entry(list_begin(sleeping_threads),struct thread, elem);
+  struct thread * woke = list_entry(list_begin(&sleeping_threads),struct thread, elem);
   if(woke!= NULL && woke->wakeUpTime <= ticks){
     thread_unblock(woke);
   }
 }
-
+ bool wakeUpComp( struct list_elem * a, struct list_elem * b, int * useless ) {
+   struct thread * aThread = list_entry(a, struct thread, elem);
+   struct thread * bThread =list_entry(b, struct thread, elem);
+   return (aThread->wakeUpTime) < (bThread->wakeUpTime);
+ }
+
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);

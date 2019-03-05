@@ -142,9 +142,11 @@ int thread_get_load_avg (void);
 /* puts current thread into the ordered list of sleeping threads*/
 void putToSleep(void);
  
- /* returns a reference to the first element in the sleeping */
-void wakeUP (int64_t time);
+ /* returns a reference to the first element in the sleeping  
+  queue if it is ready to wake up*/
+void wakeUP(int64_t);
 
-bool wakeUpComp (list_elem * ,list_elem *, void *);
-void wakeUP(int64_t ticks);
+/* custom comparator to compare the wakeup time of two threads*/
+bool wakeUpComp (struct list_elem * , struct list_elem *, void *);
+
 #endif /* threads/thread.h */
