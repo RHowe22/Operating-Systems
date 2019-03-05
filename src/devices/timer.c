@@ -24,6 +24,17 @@ static int64_t ticks;
    Initialized by timer_calibrate(). */
 static unsigned loops_per_tick;
 
+/* used to prevent race conditions from two threads trying to access 
+ sleep at the same time */
+static struct semaphore thread_in_sleep;
+
+/*
+bool value to prevent race conditions from when a timer interrupt happens
+while a a thread is being put to sleep
+*/
+bool sleeping_list_modified;
+
+
 static intr_handler_func timer_interrupt;
 static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
@@ -35,6 +46,8 @@ static void real_time_delay (int64_t num, int32_t denom);
 void
 timer_init (void) 
 {
+  sema_init(&thread_in_sleep);
+  sleeping_list_modified = false; 
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
 }
