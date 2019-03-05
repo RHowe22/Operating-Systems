@@ -47,7 +47,7 @@ void
 timer_init (void) 
 {
   sema_init(&thread_in_sleep);
-  sleeping_list_modified = false; 
+  sleeping_list_modified = false;
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
 }
