@@ -587,9 +587,13 @@ allocate_tid (void)
 
 void wakeUP(int64_t ticks){
   //Setting woke to be first element of sleeping list
-  struct thread * woke = list_entry(list_begin(&sleeping_threads),struct thread, elem);
-  if(woke!= NULL && woke->wakeUpTime <= ticks){
+  if(!list_empty(&sleeping_threads))
+  {
+    struct thread * woke = list_entry(list_begin(&sleeping_threads),struct thread, elem);
+  if(woke->wakeUpTime <= ticks){
+    list_pop_front(&sleeping_threads);
     thread_unblock(woke);
+  }
   }
 }
  bool wakeUpComp( struct list_elem * a, struct list_elem * b, int * useless ) {
