@@ -46,7 +46,7 @@ static void real_time_delay (int64_t num, int32_t denom);
 void
 timer_init (void) 
 {
-  sema_init(&thread_in_sleep);
+  sema_init(&thread_in_sleep,0);
   sleeping_list_modified = false;
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
@@ -108,7 +108,6 @@ timer_sleep (int64_t ticks)
   ASSERT (intr_get_level () == INTR_ON);
  
   struct thread * cur =thread_current();
-  int64_t start = timer_ticks ();
   cur->wakeUpTime= timer_ticks() +ticks; 
   sema_down(&thread_in_sleep);
   sleeping_list_modified=true;
@@ -117,7 +116,7 @@ timer_sleep (int64_t ticks)
   sema_up(&thread_in_sleep);
   
   enum intr_level old_level = intr_disable ();
-  thread_block(cur);
+  thread_block();
   intr_set_level(old_level);
 }
 

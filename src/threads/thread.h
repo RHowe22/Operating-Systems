@@ -147,6 +147,6 @@ void putToSleep(void);
 void wakeUP(int64_t);
 
 /* custom comparator to compare the wakeup time of two threads*/
-bool wakeUpComp (struct list_elem * , struct list_elem *, void *);
+bool wakeUpComp (struct list_elem * , struct list_elem *, int *);
 
 #endif /* threads/thread.h */
