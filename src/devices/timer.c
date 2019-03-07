@@ -112,11 +112,12 @@ timer_sleep (int64_t ticks)
   sema_down(&thread_in_sleep);
   sleeping_list_modified=true;
   putToSleep();
-  sleeping_list_modified= false;
   sema_up(&thread_in_sleep);
   enum intr_level old_level = intr_disable ();
+  sleeping_list_modified= false;
   thread_block();
   intr_set_level(old_level);
+
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
