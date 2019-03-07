@@ -585,27 +585,32 @@ allocate_tid (void)
 
   return tid;
 }
+
 void putToSleep (){
-  printf("trying to put to sleep\n");
-  list_insert_ordered(&sleeping_threads,&(thread_current()->elem),wakeUpComp,NULL);
-  printf("put to sleep\n");
+  list_insert_ordered(&sleeping_threads,&(thread_current()->elem),ThreadComp,NULL); 
 }
+
 void wakeUP(int64_t ticks){
   //Setting woke to be first element of sleeping list
-  if(!list_empty(&sleeping_threads))
+  struct thread * woke = NULL;
+  while(!list_empty(&sleeping_threads))
   {
-    struct thread * woke = list_entry(list_begin(&sleeping_threads),struct thread, elem);
-  if(woke->wakeUpTime <= ticks){
-    list_pop_front(&sleeping_threads);
-    thread_unblock(woke);
-  }
+    woke = list_entry(list_begin(&sleeping_threads),struct thread, elem);
+    if(woke->wakeUpTime <= ticks){
+      list_pop_front(&sleeping_threads);
+      woke->wakeUpTime=0;
+      thread_unblock(woke);
+   }
+   else{
+     break;
+   }
   }
 }
- bool wakeUpComp(const  struct list_elem * a, const struct list_elem * b, void * useless UNUSED) {
+ bool ThreadComp(const  struct list_elem * a, const struct list_elem * b, void * useless UNUSED) {
    struct thread * aThread = list_entry(a, struct thread, elem);
    struct thread * bThread =list_entry(b, struct thread, elem);
    if(aThread->wakeUpTime == bThread->wakeUpTime){
-     return aThread->priority <bThread->priority;
+     return aThread->priority > bThread->priority;
    }
    return (aThread->wakeUpTime) < (bThread->wakeUpTime);
  }

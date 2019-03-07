@@ -46,7 +46,7 @@ static void real_time_delay (int64_t num, int32_t denom);
 void
 timer_init (void) 
 {
-  sema_init(&thread_in_sleep,0);
+  sema_init(&thread_in_sleep,1);
   sleeping_list_modified = false;
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
@@ -102,8 +102,6 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
-  printf("arg %"PRId64" \n");
-  printf("pre wake up %"PRId64" , cur time % "PRId64"\n", (thread_current()->wakeUpTime),timer_ticks());
   if (ticks <= 0){
     return;
   }
@@ -111,7 +109,6 @@ timer_sleep (int64_t ticks)
  
   struct thread * cur =thread_current();
   cur->wakeUpTime= timer_ticks() +ticks; 
-  printf("post cur wake up %"PRId64" , cur time % "PRId64 "\n", (thread_current()->wakeUpTime),timer_ticks());
   sema_down(&thread_in_sleep);
   sleeping_list_modified=true;
   putToSleep();
