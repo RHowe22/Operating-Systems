@@ -102,6 +102,8 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
+  printf("arg %"PRId64" \n");
+  printf("pre wake up %"PRId64" , cur time % "PRId64"\n", (thread_current()->wakeUpTime),timer_ticks());
   if (ticks <= 0){
     return;
   }
@@ -109,12 +111,12 @@ timer_sleep (int64_t ticks)
  
   struct thread * cur =thread_current();
   cur->wakeUpTime= timer_ticks() +ticks; 
+  printf("post cur wake up %"PRId64" , cur time % "PRId64 "\n", (thread_current()->wakeUpTime),timer_ticks());
   sema_down(&thread_in_sleep);
   sleeping_list_modified=true;
   putToSleep();
   sleeping_list_modified= false;
   sema_up(&thread_in_sleep);
-  
   enum intr_level old_level = intr_disable ();
   thread_block();
   intr_set_level(old_level);
