@@ -342,10 +342,11 @@ cond_broadcast (struct condition *cond, struct lock *lock)
 
   while (!list_empty (&cond->waiters))
     cond_signal (cond, lock);
+
 }
 
 bool condComp( struct list_elem * a, struct list_elem * b, void * useless UNUSED){
   struct semaphore_elem * aSem = list_entry(a, struct semaphore_elem, elem );
   struct semaphore_elem * bSem = list_entry(b, struct semaphore_elem, elem );
-  return (aSem->semaphore.firstPriority) < (bSem->semaphore.firstPriority);
+  return (aSem->semaphore.firstPriority) > (bSem->semaphore.firstPriority);
 }
