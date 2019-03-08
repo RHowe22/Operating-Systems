@@ -48,6 +48,7 @@ sema_init (struct semaphore *sema, unsigned value)
 
   sema->value = value;
   list_init (&sema->waiters);
+  sema->firstPriority = PRI_MIN;
 }
 
 /* Down or "P" operation on a semaphore.  Waits for SEMA's value
@@ -69,6 +70,9 @@ sema_down (struct semaphore *sema)
   while (sema->value == 0) 
     {
       list_insert_ordered (&sema->waiters, &thread_current ()->elem,ThreadComp, NULL);
+      if (thread_current->priority > sema->firstPriority){
+        sema->firstPriority = thread_current->priority;
+      }
       thread_block ();
     }
   sema->value--;
@@ -117,6 +121,10 @@ sema_up (struct semaphore *sema)
     thread_unblock (front=( list_entry (list_pop_front (&sema->waiters),
                                 struct thread, elem)));
 
+  if (list_empty (&sema->waiters)){
+    struct thread * nextThread = list_entry(list_begin(&sema->waiters),struct thread, elem);
+    sema->firstPriority = nextThread->priority;
+  }
 
   sema->value++;                              
   intr_set_level (old_level);
