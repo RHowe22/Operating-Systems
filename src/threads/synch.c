@@ -70,8 +70,8 @@ sema_down (struct semaphore *sema)
   while (sema->value == 0) 
     {
       list_insert_ordered (&sema->waiters, &thread_current ()->elem,ThreadComp, NULL);
-      if (thread_current->priority > sema->firstPriority){
-        sema->firstPriority = thread_current->priority;
+      if (thread_current()->priority > sema->firstPriority){
+        sema->firstPriority = thread_current()->priority;
       }
       thread_block ();
     }
@@ -121,7 +121,7 @@ sema_up (struct semaphore *sema)
     thread_unblock (front=( list_entry (list_pop_front (&sema->waiters),
                                 struct thread, elem)));
 
-  if (list_empty (&sema->waiters)){
+  if (!list_empty (&sema->waiters)){
     struct thread * nextThread = list_entry(list_begin(&sema->waiters),struct thread, elem);
     sema->firstPriority = nextThread->priority;
   }
@@ -353,7 +353,7 @@ cond_broadcast (struct condition *cond, struct lock *lock)
 
 }
 
-bool condComp( struct list_elem * a, struct list_elem * b, void * useless UNUSED){
+bool condComp(const struct list_elem * a, const struct list_elem * b, void * useless UNUSED){
   struct semaphore_elem * aSem = list_entry(a, struct semaphore_elem, elem );
   struct semaphore_elem * bSem = list_entry(b, struct semaphore_elem, elem );
   return (aSem->semaphore.firstPriority) > (bSem->semaphore.firstPriority);
