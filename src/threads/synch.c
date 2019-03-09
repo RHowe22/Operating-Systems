@@ -69,10 +69,10 @@ sema_down (struct semaphore *sema)
   old_level = intr_disable ();
   while (sema->value == 0) 
     {
-      list_insert_ordered (&sema->waiters, &thread_current ()->elem,ThreadComp, NULL);
       if (thread_current()->priority > sema->firstPriority){
         sema->firstPriority = thread_current()->priority;
       }
+      list_insert_ordered (&sema->waiters, &(thread_current ()->elem),ThreadComp, NULL);
       thread_block ();
     }
   sema->value--;
@@ -124,6 +124,9 @@ sema_up (struct semaphore *sema)
   if (!list_empty (&sema->waiters)){
     struct thread * nextThread = list_entry(list_begin(&sema->waiters),struct thread, elem);
     sema->firstPriority = nextThread->priority;
+  }
+  else{
+      sema->firstPriority=PRI_MIN;
   }
 
   sema->value++;                              
@@ -310,7 +313,7 @@ cond_wait (struct condition *cond, struct lock *lock)
   ASSERT (lock_held_by_current_thread (lock));
   
   sema_init (&waiter.semaphore, 0);
-  list_insert_ordered(&cond->waiters, &waiter.elem, condComp, NULL);
+  list_push_back(&cond->waiters,&waiter.elem);
   lock_release (lock);
   sema_down (&waiter.semaphore);
   lock_acquire (lock);
@@ -331,9 +334,13 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED)
   ASSERT (!intr_context ());
   ASSERT (lock_held_by_current_thread (lock));
 
-  if (!list_empty (&cond->waiters)) 
-    sema_up (&list_entry (list_pop_front (&cond->waiters),
+  if (!list_empty (&cond->waiters)) {
+    struct list_elem * max=list_max(&cond->waiters,condComp,NULL) ;
+    list_remove(max);
+    sema_up (&list_entry (max,
                           struct semaphore_elem, elem)->semaphore);
+  }
+
 }
 
 /* Wakes up all threads, if any, waiting on COND (protected by
@@ -356,5 +363,5 @@ cond_broadcast (struct condition *cond, struct lock *lock)
 bool condComp(const struct list_elem * a, const struct list_elem * b, void * useless UNUSED){
   struct semaphore_elem * aSem = list_entry(a, struct semaphore_elem, elem );
   struct semaphore_elem * bSem = list_entry(b, struct semaphore_elem, elem );
-  return (aSem->semaphore.firstPriority) > (bSem->semaphore.firstPriority);
+  return (aSem->semaphore.firstPriority) < (bSem->semaphore.firstPriority);
 }
