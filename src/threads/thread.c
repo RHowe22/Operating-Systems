@@ -54,7 +54,7 @@ struct kernel_thread_frame
 static long long idle_ticks;    /* # of timer ticks spent idle. */
 static long long kernel_ticks;  /* # of timer ticks in kernel threads. */
 static long long user_ticks;    /* # of timer ticks in user programs. */
-fixed_point_t load_average;      /* load average of the system in MLFQS*/
+static fixed_point_t load_average;      /* load average of the system in MLFQS*/
 /* Scheduling. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
@@ -147,7 +147,7 @@ thread_tick (void)
 #endif
   else
     kernel_ticks++;
-  t->recent_cpu= fix_add(t->recent_cpu, __mk_fix(1));
+  t->recent_cpu= fix_add(t->recent_cpu, fix_int(1));
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
@@ -399,7 +399,7 @@ thread_get_nice (void)
 int
 thread_get_load_avg (void) 
 {
-  return fix_round(fix_mul(load_average,__mk_fix(100)));
+  return fix_round(fix_scale(load_average,100));
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
@@ -498,12 +498,14 @@ init_thread (struct thread *t, const char *name, int priority)
   {
     if(strcmp(name,"idle")==0){
       t->nice=0;
+      t->recent_cpu= __mk_fix(0);
+
     }
     else
    {
       t->nice=thread_current()->nice;
+      t->recent_cpu.f=thread_current()->recent_cpu.f;
    }
-   t->recent_cpu= __mk_fix(0);
    recal_Pri(t, NULL);
   }
   else
@@ -673,9 +675,9 @@ void wakeUP(int64_t ticks){
  }
 
 void recalc_recent(struct thread * t, void * useless UNUSED){
-    fixed_point_t coefficent =( fix_mul(__mk_fix(2),load_average));
-    coefficent = fix_div( coefficent,fix_add(coefficent,__mk_fix(1)));
-    t->recent_cpu=fix_add(fix_mul(t->recent_cpu,coefficent),__mk_fix(t->nice));
+    fixed_point_t coefficent =( fix_scale(load_average,2));
+    coefficent = fix_div( coefficent,fix_add(coefficent,fix_int(1)));
+    t->recent_cpu=fix_add(fix_mul(t->recent_cpu,coefficent),fix_int(t->nice));
 }
 
 
@@ -696,28 +698,36 @@ void recal_Pri(struct thread * t, void * useless UNUSED){
 
  void recalc_load(){
    int num_ready=0;
-   for(int i=PRI_MIN;i<PRI_MAX;i++){
+   for(int i=PRI_MIN;i<=PRI_MAX;i++){
      num_ready+=list_size(mlfqs_list+i);
    }
-   fixed_point_t first_half= fix_mul(load_average,
-                 fix_div(__mk_fix(59),__mk_fix(60)));
-   fixed_point_t scnd_half= fix_mul(__mk_fix(num_ready),
-                fix_div(__mk_fix(1),__mk_fix(60)));
+   if(thread_current()!=idle_thread){
+     num_ready+=1;
+   }
+   fixed_point_t first_half= fix_unscale(fix_scale(load_average,59), 60);
+   fixed_point_t scnd_half= fix_unscale(fix_int(num_ready),60);
    load_average= fix_add(first_half,scnd_half);                          
  }
 
  void recalc_Ready_pri(){
+   int oldPri;
    struct thread * t= thread_current();   
    if(t!=idle_thread){
+     oldPri=t->priority;
      recal_Pri(t,NULL);
+     if(oldPri>t->priority)
+        intr_yield_on_return();
      for(int i= PRI_MIN;i<=PRI_MAX;i++)
      {
        if(!list_empty(mlfqs_list+i)){
           for(struct list_elem * cur_elem =list_begin(mlfqs_list+i);
                cur_elem!=list_end(mlfqs_list+i);cur_elem=list_next(cur_elem)){
                 t= list_entry(cur_elem,struct thread, elem);
+               // oldPri=t->priority;
                 recal_Pri(t, NULL) ;
-               }
+                //if(oldPri!=t->priority)
+                  //  list_push_back(mlfqs_list+(t->priority)
+          }
        }
      }
    }
