@@ -4,7 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
-
+#include "fixedpoint.h"
 /* States in a thread's life cycle. */
 enum thread_status
   {
@@ -91,9 +91,11 @@ struct thread
     struct list_elem allelem;           /* List element for all threads list. */
 
     int64_t wakeUpTime ;                /* time to wakeup the thread if it is sleeping */
+    int nice;                           /* niceness of the thread  */
+    fixed_point_t recent_cpu;            /* threads recent cpu time */
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
-
+ 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
@@ -149,4 +151,9 @@ void wakeUP(int64_t);
 /* custom comparator to compare the wakeup time of two threads*/
 bool ThreadComp (const struct list_elem * , const struct list_elem *, void *);
 
+void recal_Pri (struct thread *, void *);
+
+void recalc_recent(struct thread *, void *);
+
+void recalc_load(void);
 #endif /* threads/thread.h */

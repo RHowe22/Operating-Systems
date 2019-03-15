@@ -11,7 +11,6 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
-#include "threads/fixedpoint.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -33,7 +32,7 @@ static struct list all_list;
 to elapse*/
 static struct list sleeping_threads;
 
-
+static struct list mlfqs_list [64];
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -55,7 +54,7 @@ struct kernel_thread_frame
 static long long idle_ticks;    /* # of timer ticks spent idle. */
 static long long kernel_ticks;  /* # of timer ticks in kernel threads. */
 static long long user_ticks;    /* # of timer ticks in user programs. */
-
+fixed_point_t load_average;      /* load average of the system in MLFQS*/
 /* Scheduling. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
@@ -99,6 +98,14 @@ thread_init (void)
   list_init (&ready_list);
   list_init (&all_list);
   list_init (&sleeping_threads);
+  if(thread_mlfqs){
+    for(int i=0; i < 64 ; i++){
+      list_init(mlfqs_list+i);
+     }
+     load_average=__mk_fix(0);
+  }
+  
+
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   init_thread (initial_thread, "main", PRI_DEFAULT);
@@ -139,7 +146,7 @@ thread_tick (void)
 #endif
   else
     kernel_ticks++;
-
+  t->recent_cpu= fix_add(t->recent_cpu, __mk_fix(1));
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
@@ -188,7 +195,6 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
-  t->wakeUpTime =0;
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
@@ -207,8 +213,9 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
-  if(t->priority>thread_current()->priority){
-    thread_yield();
+  if(!thread_mlfqs)
+    if(t->priority>thread_current()->priority){
+      thread_yield();
   }
   return tid;
 }
@@ -344,8 +351,10 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
-  thread_yield();
+  if(!thread_mlfqs){
+    thread_current ()->priority = new_priority;
+    thread_yield();
+  }
 }
 
 /* Returns the current thread's priority. */
@@ -357,33 +366,35 @@ thread_get_priority (void)
 
 /* Sets the current thread's nice value to NICE. */
 void
-thread_set_nice (int nice UNUSED) 
+thread_set_nice (int nice ) 
 {
   /* Not yet implemented. */
+  struct thread * cur = thread_current();
+  int old_nice= cur->nice;
+  cur->nice=nice;
+  if(old_nice<nice)
+    thread_yield();
 }
 
 /* Returns the current thread's nice value. */
 int
 thread_get_nice (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  return thread_current()->nice;
 }
 
 /* Returns 100 times the system load average. */
 int
 thread_get_load_avg (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  return fix_round(fix_mul(load_average,__mk_fix(100)));
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  return fix_round(fix_mul(thread_current()->recent_cpu,__mk_fix(100)));
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -471,8 +482,22 @@ init_thread (struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
-  t->priority = priority;
+  if(thread_mlfqs)
+  {
+    if(strcmp(name,"idle")==0){
+    t->nice=0;
+  }
+  else
+  {
+    t->nice=thread_current()->nice;
+  }
+  recal_Pri(t, NULL);
+  }
+  else
+    t->priority = priority;
   t->magic = THREAD_MAGIC;
+  t->wakeUpTime =0;
+  t->recent_cpu= __mk_fix(0);
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
@@ -619,6 +644,32 @@ void wakeUP(int64_t ticks){
      return aThread->priority > bThread->priority;
    }
    return (aThread->wakeUpTime) < (bThread->wakeUpTime);
+ }
+
+void recalc_recent(struct thread * t, void * useless UNUSED){
+    fixed_point_t coefficent =( fix_mul(__mk_fix(2),load_average));
+    coefficent = fix_div( coefficent,fix_add(coefficent,__mk_fix(1)));
+    t->recent_cpu=fix_add(fix_mul(t->recent_cpu,coefficent),__mk_fix(t->nice));
+}
+
+
+void recal_Pri(struct thread * t, void * useless UNUSED){
+  t->priority= PRI_MAX- fix_round(
+                        fix_div((t->recent_cpu),__mk_fix(4)))
+                        -(t->nice*2);
+}
+
+
+ void recalc_load(){
+   int num_ready=0;
+   for(int i=PRI_MIN;i<PRI_MAX;i++){
+     num_ready+=list_size(mlfqs_list+i);
+   }
+   fixed_point_t first_half= fix_mul(load_average,
+                 fix_div(__mk_fix(59),__mk_fix(60)));
+   fixed_point_t scnd_half= fix_mul(__mk_fix(num_ready),
+                fix_div(__mk_fix(1),__mk_fix(60)));
+   load_average= fix_add(first_half,scnd_half);                          
  }
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
