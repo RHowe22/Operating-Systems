@@ -92,6 +92,7 @@ static tid_t allocate_tid (void);
 void
 thread_init (void) 
 {
+
   ASSERT (intr_get_level () == INTR_OFF);
 
   lock_init (&tid_lock);
@@ -184,7 +185,6 @@ thread_create (const char *name, int priority,
   struct switch_entry_frame *ef;
   struct switch_threads_frame *sf;
   tid_t tid;
-
   ASSERT (function != NULL);
 
   /* Allocate thread. */
@@ -255,7 +255,7 @@ thread_unblock (struct thread *t)
   ASSERT (t->status == THREAD_BLOCKED);
   if(thread_mlfqs){
         recal_Pri(t,NULL);
-        list_insert_ordered (mlfqs_list+(t->priority), &t->elem,ThreadComp,NULL);
+        list_push_back(mlfqs_list+(t->priority), &t->elem);
   }
   else
     list_insert_ordered (&ready_list, &t->elem,ThreadComp,NULL);
@@ -328,8 +328,13 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread) 
+  if (cur != idle_thread) {
+    if(thread_mlfqs){
+      list_push_back(mlfqs_list+(cur->priority),&cur->elem);
+    }
+    else
     list_insert_ordered (&ready_list, &cur->elem,ThreadComp,NULL);
+  }
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -373,12 +378,13 @@ thread_get_priority (void)
 void
 thread_set_nice (int nice ) 
 {
-  /* Not yet implemented. */
   struct thread * cur = thread_current();
-  int old_nice= cur->nice;
+  int oldPri= cur->priority;
   cur->nice=nice;
-  if(old_nice<nice)
+  recal_Pri(cur,NULL);
+  if(oldPri > cur->priority){    
     thread_yield();
+  }
 }
 
 /* Returns the current thread's nice value. */
@@ -386,6 +392,7 @@ int
 thread_get_nice (void) 
 {
   return thread_current()->nice;
+  
 }
 
 /* Returns 100 times the system load average. */
@@ -487,7 +494,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
-  if(thread_mlfqs)
+  if(thread_mlfqs&& strcmp(name,"main")!=0)
   {
     if(strcmp(name,"idle")==0){
       t->nice=0;
@@ -538,7 +545,7 @@ next_thread_to_run (void)
   }
   else{
     int i =PRI_MAX;
-    while(i>PRI_MIN){
+    while(i>=PRI_MIN){
       if(!list_empty(mlfqs_list+i))
         break;
       i--;  
@@ -673,6 +680,7 @@ void recalc_recent(struct thread * t, void * useless UNUSED){
 
 
 void recal_Pri(struct thread * t, void * useless UNUSED){
+
   int new_pri= PRI_MAX- fix_round(
                         fix_div((t->recent_cpu),__mk_fix(4)))
                         -(t->nice*2);
@@ -682,7 +690,7 @@ void recal_Pri(struct thread * t, void * useless UNUSED){
     t->priority=PRI_MIN;
    else 
     t->priority=new_pri;
-                              
+             
 }
 
 
