@@ -146,8 +146,11 @@ thread_tick (void)
     user_ticks++;
 #endif
   else
+  {  
     kernel_ticks++;
-  t->recent_cpu= fix_add(t->recent_cpu, fix_int(1));
+    if(thread_mlfqs)
+      t->recent_cpu= fix_add(t->recent_cpu, fix_int(1));
+  }
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
@@ -406,7 +409,7 @@ thread_get_load_avg (void)
 int
 thread_get_recent_cpu (void) 
 {
-  return fix_round(fix_mul(thread_current()->recent_cpu,__mk_fix(100)));
+  return fix_round(fix_scale(thread_current()->recent_cpu,100));
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -504,7 +507,7 @@ init_thread (struct thread *t, const char *name, int priority)
     else
    {
       t->nice=thread_current()->nice;
-      t->recent_cpu.f=thread_current()->recent_cpu.f;
+      t->recent_cpu=thread_current()->recent_cpu;
    }
    recal_Pri(t, NULL);
   }
@@ -683,9 +686,9 @@ void recalc_recent(struct thread * t, void * useless UNUSED){
 
 void recal_Pri(struct thread * t, void * useless UNUSED){
 
-  int new_pri= PRI_MAX- fix_round(
-                        fix_div((t->recent_cpu),__mk_fix(4)))
-                        -(t->nice*2);
+  int new_pri= PRI_MAX- 
+                  fix_round(fix_unscale((t->recent_cpu),4))
+                  -(t->nice*2);
   if( new_pri > PRI_MAX)
     t->priority= PRI_MAX;
    else if( new_pri < PRI_MIN)
@@ -721,12 +724,16 @@ void recal_Pri(struct thread * t, void * useless UNUSED){
      {
        if(!list_empty(mlfqs_list+i)){
           for(struct list_elem * cur_elem =list_begin(mlfqs_list+i);
-               cur_elem!=list_end(mlfqs_list+i);cur_elem=list_next(cur_elem)){
+                                      cur_elem!=list_end(mlfqs_list+i);){
                 t= list_entry(cur_elem,struct thread, elem);
-               // oldPri=t->priority;
+                  oldPri=t->priority;
+                  cur_elem=list_next(cur_elem);
                 recal_Pri(t, NULL) ;
-                //if(oldPri!=t->priority)
-                  //  list_push_back(mlfqs_list+(t->priority)
+               /*   if(oldPri != t->priority){
+                    list_push_back(mlfqs_list+(t->priority),&t->elem);
+                    if(t->priority>thread_current()->priority)
+                        intr_yield_on_return();
+                  }*/
           }
        }
      }
