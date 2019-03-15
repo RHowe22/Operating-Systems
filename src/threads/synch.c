@@ -363,5 +363,10 @@ cond_broadcast (struct condition *cond, struct lock *lock)
 bool condComp(const struct list_elem * a, const struct list_elem * b, void * useless UNUSED){
   struct semaphore_elem * aSem = list_entry(a, struct semaphore_elem, elem );
   struct semaphore_elem * bSem = list_entry(b, struct semaphore_elem, elem );
+
+  struct thread *aThread = list_entry(list_front(&aSem -> semaphore.waiters), struct thread, elem);
+  struct thread *bThread = list_entry(list_front(&bSem -> semaphore.waiters), struct thread, elem);
+
+
   return (aSem->semaphore.firstPriority) < (bSem->semaphore.firstPriority);
 }
