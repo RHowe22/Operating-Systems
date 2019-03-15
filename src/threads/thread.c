@@ -253,7 +253,12 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_insert_ordered (&ready_list, &t->elem,ThreadComp,NULL);
+  if(thread_mlfqs){
+        recal_Pri(t,NULL);
+        list_insert_ordered (mlfqs_list+(t->priority), &t->elem,ThreadComp,NULL);
+  }
+  else
+    list_insert_ordered (&ready_list, &t->elem,ThreadComp,NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -485,20 +490,20 @@ init_thread (struct thread *t, const char *name, int priority)
   if(thread_mlfqs)
   {
     if(strcmp(name,"idle")==0){
-    t->nice=0;
-  }
-  else
-  {
-    t->nice=thread_current()->nice;
-  }
-  recal_Pri(t, NULL);
+      t->nice=0;
+    }
+    else
+   {
+      t->nice=thread_current()->nice;
+   }
+   t->recent_cpu= __mk_fix(0);
+   recal_Pri(t, NULL);
   }
   else
     t->priority = priority;
   t->magic = THREAD_MAGIC;
   t->wakeUpTime =0;
-  t->recent_cpu= __mk_fix(0);
-
+  
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
@@ -525,10 +530,24 @@ alloc_frame (struct thread *t, size_t size)
 static struct thread *
 next_thread_to_run (void) 
 {
-  if (list_empty (&ready_list))
-    return idle_thread;
-  else
-    return list_entry (list_pop_front (&ready_list), struct thread, elem);
+  if(!thread_mlfqs){
+    if (list_empty (&ready_list))
+      return idle_thread;
+    else
+      return list_entry (list_pop_front (&ready_list), struct thread, elem);
+  }
+  else{
+    int i =PRI_MAX;
+    while(i>PRI_MIN){
+      if(!list_empty(mlfqs_list+i))
+        break;
+      i--;  
+    }
+    if(i>=PRI_MIN)
+            return list_entry (list_pop_front (mlfqs_list+i), struct thread, elem);
+    else 
+        return idle_thread;
+  }
 }
 
 /* Completes a thread switch by activating the new thread's page
@@ -654,9 +673,16 @@ void recalc_recent(struct thread * t, void * useless UNUSED){
 
 
 void recal_Pri(struct thread * t, void * useless UNUSED){
-  t->priority= PRI_MAX- fix_round(
+  int new_pri= PRI_MAX- fix_round(
                         fix_div((t->recent_cpu),__mk_fix(4)))
                         -(t->nice*2);
+  if( new_pri > PRI_MAX)
+    t->priority= PRI_MAX;
+   else if( new_pri < PRI_MIN)
+    t->priority=PRI_MIN;
+   else 
+    t->priority=new_pri;
+                              
 }
 
 
@@ -670,6 +696,24 @@ void recal_Pri(struct thread * t, void * useless UNUSED){
    fixed_point_t scnd_half= fix_mul(__mk_fix(num_ready),
                 fix_div(__mk_fix(1),__mk_fix(60)));
    load_average= fix_add(first_half,scnd_half);                          
+ }
+
+ void recalc_Ready_pri(){
+   struct thread * t= thread_current();   
+   if(t!=idle_thread){
+     recal_Pri(t,NULL);
+     for(int i= PRI_MIN;i<=PRI_MAX;i++)
+     {
+       if(!list_empty(mlfqs_list+i)){
+          for(struct list_elem * cur_elem =list_begin(mlfqs_list+i);
+               cur_elem!=list_end(mlfqs_list+i);cur_elem=list_next(cur_elem)){
+                t= list_entry(cur_elem,struct thread, elem);
+                recal_Pri(t, NULL) ;
+               }
+       }
+     }
+   }
+
  }
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */

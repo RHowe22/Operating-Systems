@@ -117,7 +117,9 @@ timer_sleep (int64_t ticks)
   sleeping_list_modified= false;
   thread_block();
   intr_set_level(old_level);
-
+  /*interupts only temporarily disabled to allow us to block
+  this thread and prevent the timer interrupt
+  from trying to access an unblocked thread*/
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -195,6 +197,16 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
+  
+  if(thread_mlfqs){
+    if(ticks % TIMER_FREQ==0){
+      recalc_load();
+      thread_foreach(recalc_recent, NULL);
+    }  
+    if(ticks % 4 ==0)
+      recalc_Ready_pri();
+  } 
+
   if(!sleeping_list_modified)
   {
     wakeUP(ticks);

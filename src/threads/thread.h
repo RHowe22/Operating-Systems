@@ -156,4 +156,6 @@ void recal_Pri (struct thread *, void *);
 void recalc_recent(struct thread *, void *);
 
 void recalc_load(void);
+
+void recalc_Ready_pri(void);
 #endif /* threads/thread.h */
